@@ -1,40 +1,4 @@
-'''This script goes along the blog post
-"Building powerful image classification models using very little data"
-from blog.keras.io.
-It uses data that can be downloaded at:
-https://www.kaggle.com/c/dogs-vs-cats/data
-In our setup, we:
-- created a data/ folder
-- created train/ and validation/ subfolders inside data/
-- created cats/ and dogs/ subfolders inside train/ and validation/
-- put the cat pictures index 0-999 in data/train/cats
-- put the cat pictures index 1000-1400 in data/validation/cats
-- put the dogs pictures index 12500-13499 in data/train/dogs
-- put the dog pictures index 13500-13900 in data/validation/dogs
-So that we have 1000 training examples for each class, and 400 validation examples for each class.
-In summary, this is our directory structure:
-```
-data/
-    train/
-        dogs/
-            dog001.jpg
-            dog002.jpg
-            ...
-        cats/
-            cat001.jpg
-            cat002.jpg
-            ...
-    validation/
-        dogs/
-            dog001.jpg
-            dog002.jpg
-            ...
-        cats/
-            cat001.jpg
-            cat002.jpg
-            ...
-```
-'''
+
 import os
 from six.moves import cPickle as pickle
 import numpy as np
@@ -53,14 +17,13 @@ import glob
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import scipy.io
-mpl.rcParams['pdf.fonttype'] = 42 # change the default settings of matplotlib
+mpl.rcParams['pdf.fonttype'] = 42 # change the default font setting settings of matplotlib
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['svg.fonttype'] = 'none'
 mpl.rcParams.update({'figure.autolayout': True})
 #%%
-def load_img(dir_path, subdir_name, imgsub_w, imgsub_h, chan_idx):        
+def load_img(dir_path, subdir_name, imgsub_w, imgsub_h, chan_idx): #%% load images from MAT files specified in 'subdir_name'      
 #    subdir_path = glob.glob(os.path.join(dir_path, '*/'))
-#    #subdir_name = ['p1','p2','p3', 'p4', 'p6', 'p7', 'p8' , 'p9', 'p10', 'p12']
 #    subdir_name = [os.path.split(subdir[:-1])[1] for subdir in subdir_path]   
     nSubdir = len(subdir_name)
     file_path = os.path.join(dir_path, subdir_name[1],"MultiplexImageDataAligned.mat")
@@ -94,7 +57,7 @@ def load_img(dir_path, subdir_name, imgsub_w, imgsub_h, chan_idx):
 #            else:
 #                imgSingField = imgSingField[:,:,2].reshape(img_h, img_w,1)
                 
-            for h in range(0,img_h, imgsub_h):
+            for h in range(0,img_h, imgsub_h): # divide images into sub-images 
                 for w in range(0,img_w, imgsub_w):
                     dataset_temp[sample_ind,:,:,:] = imgSingField[h:h+imgsub_h,w:w+imgsub_w,:]
                     sample_ind += 1
@@ -128,7 +91,7 @@ def show_images(dataset):
         a=fig.add_subplot(np.ceil(n_img/6),6,subplot_num)            
         imgplot = plt.imshow(img, cmap='gray')                                 
         subplot_num = subplot_num + 1
-#%%
+#%% main script
 dir_path = 'E:\\data\\Neuron\\cortical\\Broad_HCS\\14days\\MF20170215-latruculin-time\\post_processing_multicolor'
 data_root = 'E:\Google Drive\Python\deep learning' # Change me to store data elsewhere
 os.chdir(data_root)
@@ -159,10 +122,9 @@ print('Test set', test.shape, test_labels.shape)
 #valid_sublabl = valid_labels[0:1000]
 #np.unique(train_sublabl) # check the number of classes
 
-#%%
+#%% setup CNN model
 
-# dimensions of our images.
-img_width, img_height = train.shape[1], train.shape[2]
+img_width, img_height = train.shape[1], train.shape[2] # dimensions of images
 epochs = 50
 batch_size = 16
 
@@ -173,7 +135,7 @@ if K.image_data_format() == 'channels_first':
     input_shape = (n_channels, img_width, img_height)
 else:
     input_shape = (img_width, img_height, n_channels)
-#%%
+
 model = Sequential()
 model.add(Conv2D(32, (3, 3), input_shape=input_shape))
 model.add(Activation('relu'))
@@ -201,9 +163,9 @@ model.add(Activation('sigmoid'))
 model.compile(loss='binary_crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
-#%%
+#%% plot model architecture 
 plot_model(model, to_file='model.jpg', rankdir='TB')
-#%% this is the augmentation configuration we will use for training
+#%% data augmentation 
 train_datagen = ImageDataGenerator(
     rotation_range=180,
     width_shift_range=0.2,
@@ -211,8 +173,6 @@ train_datagen = ImageDataGenerator(
     horizontal_flip=True,
     vertical_flip=True)
 
-# this is the augmentation configuration we will use for testing:
-# only rescaling
 test_datagen = ImageDataGenerator()
 
 train_generator = train_datagen.flow(
@@ -225,7 +185,6 @@ test_generator = test_datagen.flow(
     test_labels,    
     batch_size=batch_size)
 
-
 model.fit_generator(
     train_generator,
     steps_per_epoch=train_size // batch_size,
@@ -233,10 +192,10 @@ model.fit_generator(
     workers = 4,
     use_multiprocessing = False,
     validation_data=test_generator,
-    validation_steps=test_size // batch_size)
+    validation_steps=test_size // batch_size) # train the CNN
 
 model.save_weights('2nd_try.h5')
-#%%
+#%% training without 
 #test_dataset = (test,test_labels)
 #model.fit(
 #    x=train,
